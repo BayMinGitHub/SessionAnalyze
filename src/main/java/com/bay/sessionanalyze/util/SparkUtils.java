@@ -20,7 +20,7 @@ import com.alibaba.fastjson.JSONObject;
  *
  */
 public class SparkUtils {
-	
+
 	/**
 	 * 根据当前是否本地测试的配置
 	 * 决定，如何设置SparkConf的master
@@ -29,9 +29,9 @@ public class SparkUtils {
 		boolean local = ConfigurationManager.getBoolean(Constants.SPARK_LOCAL);
 		if(local) {
 			conf.setMaster("local");
-		}  
+		}
 	}
-	
+
 	/**
 	 * 获取SQLContext
 	 * 如果spark.local设置为true，那么就创建SQLContext；否则，创建HiveContext
@@ -46,7 +46,7 @@ public class SparkUtils {
 			return new HiveContext(sc);
 		}
 	}
-	
+
 	/**
 	 * 生成模拟数据
 	 * 如果spark.local配置设置为true，则生成模拟数据；否则不生成
@@ -59,7 +59,7 @@ public class SparkUtils {
 			MockData.mock(sc, sqlContext);
 		}
 	}
-	
+
 	/**
 	 * 获取指定日期范围内的用户行为数据RDD
 	 * @param sqlContext
@@ -70,27 +70,27 @@ public class SparkUtils {
 			SQLContext sqlContext, JSONObject taskParam) {
 		String startDate = ParamUtils.getParam(taskParam, Constants.PARAM_START_DATE);
 		String endDate = ParamUtils.getParam(taskParam, Constants.PARAM_END_DATE);
-		
-		String sql = 
+
+		String sql =
 				"select * "
 				+ "from user_visit_action "
 				+ "where date>='" + startDate + "' "
-				+ "and date<='" + endDate + "'";  
+				+ "and date<='" + endDate + "'";
 //				+ "and session_id not in('','','')"
-		
+
 		DataFrame actionDF = sqlContext.sql(sql);
-		
+
 		/**
 		 * 这里就很有可能发生上面说的问题
 		 * 比如说，Spark SQl默认就给第一个stage设置了20个task，但是根据你的数据量以及算法的复杂度
 		 * 实际上，你需要1000个task去并行执行
-		 * 
+		 *
 		 * 所以说，在这里，就可以对Spark SQL刚刚查询出来的RDD执行repartition重分区操作
 		 */
-		
+
 //		return actionDF.javaRDD().repartition(1000);
-		
+
 		return actionDF.javaRDD();
 	}
-	
+
 }

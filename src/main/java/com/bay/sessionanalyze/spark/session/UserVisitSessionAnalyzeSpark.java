@@ -56,7 +56,7 @@ public class UserVisitSessionAnalyzeSpark {
         // 创建集群入口类
         JavaSparkContext sc = new JavaSparkContext(conf); // Java中使用JavaSparkContext
         // SparkSQL的上下文对象
-        SQLContext sqlContext = SparkUtils.getSQLContext(sc.sc());// 本地使用的是MySQL测试,集群使用Hive生产
+        SQLContext sqlContext = SparkUtils.getSQLContext(sc.sc()); // 本地使用的是临时表模拟,集群使用Hive生产
         // 设置检查点
         // sc.checkpointFile("hdfs://hadoop010:9000/sessionanalyze");
         // 生成模拟数据(测试)
@@ -73,34 +73,46 @@ public class UserVisitSessionAnalyzeSpark {
         // 根据Task去task_param字段获取对应的任务信息
         // task_param字段里存的就是使用者提供的查询条件
         JSONObject taskParam = JSON.parseObject(task.getTaskParam());
+
         // 开始查询指定日期范围内的行为数据(点击,搜索,下单,支付)
         // 首先要从user_visit_action这张hive表中查询出指定日期范围内的行为数据
         JavaRDD<Row> actionRDD = SparkUtils.getActionRDDByDateRange(sqlContext, taskParam);
+
         // 生成Session粒度的基础数据,得到的数据格式为:<sessionId,actionRDD>
         JavaPairRDD<String, Row> sessionId2ActionRDD = getSessionId2ActionRDD(actionRDD);
+
         // 对于以后经常用到的数据,最好缓存起来,这样便于以后快速的获取该数据
         sessionId2ActionRDD = sessionId2ActionRDD.cache();
+
         // 对行为数据进行聚合
         // 1.将行为数据按照SessionId进行分组
         // 2.行为数据RDD需要把用户信息获取到,此时需要用到join,这样就得到Session粒度的明细数据
         //   明细数据包含了Session对应的用户基本信息
         //   生成的格式为:<sessionId,(sessionId,searchKeywords,clickCategoryIds,age,professional,city,sex,...)>
         JavaPairRDD<String, String> sessionId2AggrInfoRDD = aggrgateBySession(sc, sqlContext, sessionId2ActionRDD);
+
         // 实现Accumulator累加器对数据字段的值进行累加
         Accumulator<String> sessionAggrStatAccumulator = sc.accumulator("", new SessionAggrStatAccumulator());
+
         // 以Session粒度的数据进行聚合,按照使用者指定的筛选条件进行过滤
         JavaPairRDD<String, String> filteredSessionId2AggrInfoRDD = filteredSessionAndAggrStat(sessionId2AggrInfoRDD, taskParam, sessionAggrStatAccumulator);
+
         // 缓存过滤后的数据
         filteredSessionId2AggrInfoRDD = filteredSessionId2AggrInfoRDD.persist(StorageLevel.MEMORY_AND_DISK());
+
         // 生成一个公共的RDD,通过筛选条件过滤出来的Session得到访问明细
         JavaPairRDD<String, Row> sessionId2DetailRDD = getSessionId2DetailRDD(filteredSessionId2AggrInfoRDD, sessionId2ActionRDD);
+
         // 缓存
         sessionId2DetailRDD = sessionId2DetailRDD.cache();
+
         // 如果将上一个聚合的统计结果写入数据库
         // 就必须给一个action算子进行触发后,才能真正执行任务,从Accumulator中获取数据
-        System.out.println(1 + sessionId2DetailRDD.count());
+        System.out.println(sessionId2DetailRDD.count());
+
         // 计算出各个范围的Session占比,并写入数据库
         calcalateAndPersistAggrStat(sessionAggrStatAccumulator.value(), taskId);
+
         /*
             按照时间比例随机抽取Session
             1.首先计算每个小时的Session数量
