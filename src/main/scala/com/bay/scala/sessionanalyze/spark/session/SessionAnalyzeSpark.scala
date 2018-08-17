@@ -43,10 +43,14 @@ object SessionAnalyzeSpark {
     val parameter = getparmeter(taskParam)
     val filterdSessionAggrInfoRDD: RDD[(String, String)] = getFilterSessionAggrInfo(sessionId2FullAggrInfoRDD, parameter, sessionAggrStatAccumulator)
     filterdSessionAggrInfoRDD.persist(StorageLevel.MEMORY_AND_DISK)
-    val sessionId2DetailRDD: RDD[(String, (String, Row))] = filterdSessionAggrInfoRDD.join(sessionId2ActionRDD)
+    val sessionId2DetailRDD: RDD[(String, Row)] = filterdSessionAggrInfoRDD.join(sessionId2ActionRDD).map(line => (line._1, line._2._2))
+    // println(sessionId2DetailRDD.sortByKey().take(10).toBuffer)
+    // println(sessionId2ActionRDD.sortByKey().take(10).toBuffer)
+    // println(sessionId2DetailRDD.count())
+    // println(sessionId2ActionRDD.count())
     sessionId2DetailRDD.cache()
     println(sessionId2DetailRDD.count())
-    calcalateAndPersistAggrStat(sessionAggrStatAccumulator.value, taskId)
+    //calcalateAndPersistAggrStat(sessionAggrStatAccumulator.value, taskId)
   }
 
   def calcalateAndPersistAggrStat(value: String, taskId: lang.Long): Unit = {
