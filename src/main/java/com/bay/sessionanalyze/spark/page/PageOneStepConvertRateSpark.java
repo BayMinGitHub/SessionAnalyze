@@ -100,7 +100,7 @@ public class PageOneStepConvertRateSpark {
     }
 
     /**
-     * 计算页面切面的转换率
+     * 计算页面切片的转换率
      */
     private static Map<String, Double> computePageSplitConvertRate(JSONObject taskParam, Map<String, Object> pageSplitPVMap, long startPagePV) {
         // 用于存储页面切片对应的转化率
@@ -180,7 +180,7 @@ public class PageOneStepConvertRateSpark {
                 List<Tuple2<String, Integer>> list = new ArrayList<>();
                 // 获取当期Session对应的一组行为数据
                 Iterator<Row> iterator = stringIterableTuple2._2.iterator();
-                // 获取说那个者指定的页面流
+                // 获取使用者指定的页面流
                 String[] targetPages = targetPageFlowBroadcast.value().split(",");
                 /*
                  * 代码运行到这里,session的访问数据已经拿到了
@@ -237,7 +237,6 @@ public class PageOneStepConvertRateSpark {
                     lastPageId = pageId;
                 }
                 return list;
-
             }
         });
     }

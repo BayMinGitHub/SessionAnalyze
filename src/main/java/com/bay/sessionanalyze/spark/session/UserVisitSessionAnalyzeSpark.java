@@ -410,7 +410,6 @@ public class UserVisitSessionAnalyzeSpark {
                     clickCount = longOptional.get();
                 }
                 String value = Constants.FIELD_CATEGORY_ID + "=" + categoryId + "|" + Constants.FIELD_CLICK_COUNT + "=" + clickCount;
-
                 return new Tuple2<>(categoryId, value);
             }
         });
@@ -674,11 +673,13 @@ public class UserVisitSessionAnalyzeSpark {
         /* 第三步:遍历每天每小时的Session,根据随机抽取的索引开始抽取 */
         // 需要获取到<dateHour,<session,aggrInfo>>
         JavaPairRDD<String, Iterable<String>> time2SessionRDD = time2SessionIdRDD.groupByKey();
-        // 遍历每天每小时的Session
-        // 如果发现某个Session正好在指定的这天这个小时的随机索引上
-        // 将该Session写入到数据库
-        // 然后将抽取出来的Session返回,生成新的JavaRDD<String>
-        // 用抽取出来的SessionId,去join他们的访问明细,在写入数据库表
+        /*
+         * 遍历每天每小时的Session
+         * 如果发现某个Session正好在指定的这天这个小时的随机索引上
+         * 将该Session写入到数据库
+         * 然后将抽取出来的Session返回,生成新的JavaRDD<String>
+         * 用抽取出来的SessionId,去join他们的访问明细,在写入数据库表
+         */
         JavaPairRDD<String, String> extractSessionIdsRDD = time2SessionRDD.flatMapToPair(new PairFlatMapFunction<Tuple2<String, Iterable<String>>, String, String>() {
             @Override
             public Iterable<Tuple2<String, String>> call(Tuple2<String, Iterable<String>> stringIterableTuple2) throws Exception {
