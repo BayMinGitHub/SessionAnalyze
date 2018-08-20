@@ -6,18 +6,24 @@ import java.util.Date
 import com.alibaba.fastjson.{JSON, JSONObject}
 import com.bay.sessionanalyze.constant.Constants
 import com.bay.sessionanalyze.dao.factory.DAOFactory
-import com.bay.sessionanalyze.domain.SessionAggrStat
+import com.bay.sessionanalyze.domain.{SessionAggrStat, SessionRandomExtract}
 import com.bay.sessionanalyze.util._
+import org.apache.commons.collections.IteratorUtils
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{Row, SQLContext}
 import org.apache.spark.storage.StorageLevel
 import org.apache.spark.{Accumulable, SparkConf, SparkContext}
 
+import scala.collection.immutable
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Random
+
 /**
   * Author by BayMin, Date on 2018/8/16.
   */
 object SessionAnalyzeSpark {
+
   def main(args: Array[String]): Unit = {
     Logger.getLogger("org").setLevel(Level.ERROR)
     val conf = new SparkConf().setAppName("SessionAnalyzeSpark")
@@ -44,13 +50,46 @@ object SessionAnalyzeSpark {
     val filterdSessionAggrInfoRDD: RDD[(String, String)] = getFilterSessionAggrInfo(sessionId2FullAggrInfoRDD, parameter, sessionAggrStatAccumulator)
     filterdSessionAggrInfoRDD.persist(StorageLevel.MEMORY_AND_DISK)
     val sessionId2DetailRDD: RDD[(String, Row)] = filterdSessionAggrInfoRDD.join(sessionId2ActionRDD).map(line => (line._1, line._2._2))
-    // println(sessionId2DetailRDD.sortByKey().take(10).toBuffer)
-    // println(sessionId2ActionRDD.sortByKey().take(10).toBuffer)
-    // println(sessionId2DetailRDD.count())
-    // println(sessionId2ActionRDD.count())
     sessionId2DetailRDD.cache()
     println(sessionId2DetailRDD.count())
-    //calcalateAndPersistAggrStat(sessionAggrStatAccumulator.value, taskId)
+    calcalateAndPersistAggrStat(sessionAggrStatAccumulator.value, taskId)
+    randomExtranctSession(sc, task.getTaskid, filterdSessionAggrInfoRDD, sessionId2DetailRDD);
+  }
+
+  def randomExtranctSession(sc: SparkContext, getTaskid: Long, filterdSessionAggrInfoRDD: RDD[(String, String)], sessionId2DetailRDD: RDD[(String, Row)]): Unit = {
+    val dateHourSessionIdRDD: RDD[((String, String), String)] = filterdSessionAggrInfoRDD.map(line => {
+      val aggrInfo = line._2
+      val startTime = StringUtils.getFieldFromConcatString(aggrInfo, "\\|", Constants.FIELD_START_TIME)
+      val dateHour = DateUtils.getDateHour(startTime)
+      val date = dateHour.split("_")(0)
+      val hour = dateHour.split("_")(1)
+      ((date, hour), aggrInfo)
+    })
+    val countSession = dateHourSessionIdRDD.count()
+    val countHour = dateHourSessionIdRDD.countByKey()
+    val dateHour2SessionIds: RDD[((String, String), Iterable[String])] = dateHourSessionIdRDD.groupByKey()
+    val dateHourTime: RDD[((String, String), Int)] = dateHour2SessionIds.map(line => {
+      val dateHour = line._1
+      val count = line._2.iterator.length
+      (dateHour, count)
+    })
+    dateHour2SessionIds.join(dateHourTime).map(line => {
+      val iterator = line._2._1.iterator
+      val count = line._2._2
+      count.toDouble / countSession.toDouble
+    })
+
+
+    //    val sessionRandomExtractDAO = DAOFactory.getSessionRandomExtractDAO
+    //    unit.map(line => {
+    //      val extract = new SessionRandomExtract
+    //      extract.setTaskid(getTaskid)
+    //      extract.setSessionid(StringUtils.getFieldFromConcatString(line, "\\|", Constants.FIELD_SESSION_ID))
+    //      extract.setStartTime(StringUtils.getFieldFromConcatString(line, "\\|", Constants.FIELD_START_TIME))
+    //      extract.setSearchKeywords(StringUtils.getFieldFromConcatString(line, "\\|", Constants.FIELD_SEARCH_KEYWORDS))
+    //      extract.setClickCategoryIds(StringUtils.getFieldFromConcatString(line, "\\|", Constants.FIELD_CLICK_CATEGORY_IDS))
+    //      sessionRandomExtractDAO.insert(extract)
+    //    })
   }
 
   def calcalateAndPersistAggrStat(value: String, taskId: lang.Long): Unit = {

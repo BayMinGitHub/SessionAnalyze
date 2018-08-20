@@ -15,6 +15,14 @@ import java.util.List;
 public class AdProvinceTop3DAOImpl implements IAdProvinceTop3DAO {
 
 	@Override
+	public void truncate() {
+		String sql = "truncate table ad_province_top3";
+
+		JDBCHelper jdbcHelper = JDBCHelper.getInstance();
+		jdbcHelper.executeUpdate(sql, null);
+	}
+
+	@Override
 	public void updateBatch(List<AdProvinceTop3> adProvinceTop3s) {
 		JDBCHelper jdbcHelper = JDBCHelper.getInstance();
 		

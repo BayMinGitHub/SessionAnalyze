@@ -12,6 +12,14 @@ import com.bay.sessionanalyze.jdbc.JDBCHelper;
 public class Top10SessionDAOImpl implements ITop10SessionDAO {
 
 	@Override
+	public void truncate() {
+		String sql = "truncate table top10_category_session";
+
+		JDBCHelper jdbcHelper = JDBCHelper.getInstance();
+		jdbcHelper.executeUpdate(sql, null);
+	}
+
+	@Override
 	public void insert(Top10Session top10Session) {
 		String sql = "insert into top10_category_session values(?,?,?,?)";
 		

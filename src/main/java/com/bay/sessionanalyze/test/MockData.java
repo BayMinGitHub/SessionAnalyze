@@ -86,7 +86,7 @@ public class MockData {
         JavaRDD<Row> rowsRDD = sc.parallelize(rows);
 
         StructType schema = DataTypes.createStructType(Arrays.asList(
-                DataTypes.createStructField("date", DataTypes.StringType, true),
+                DataTypes.createStructField("session_date", DataTypes.StringType, true),
                 DataTypes.createStructField("user_id", DataTypes.LongType, true),
                 DataTypes.createStructField("session_id", DataTypes.StringType, true),
                 DataTypes.createStructField("page_id", DataTypes.LongType, true),
