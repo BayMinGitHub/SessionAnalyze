@@ -105,7 +105,7 @@ public class UserVisitSessionAnalyzeSpark {
          * 2.行为数据RDD需要把用户信息获取到,此时需要用到join,这样就得到Session粒度的明细数据
          *   明细数据包含了Session对应的用户基本信息
          *   生成的格式为:<sessionId,(sessionId,searchKeywords,clickCategoryIds,age,professional,city,sex,...)>
-         */
+         * */
         JavaPairRDD<String, String> sessionId2AggrInfoRDD = aggregationBySession(sc, sqlContext, sessionId2ActionRDD);
 
         // 实现Accumulator累加器对数据字段的值进行累加
@@ -137,7 +137,7 @@ public class UserVisitSessionAnalyzeSpark {
              比如: 要取出100条Session数据
              表达式: 当前小时抽取的Session数量 = (每小时Session的数据量/Session的总量)*100
            3.按照比例进行随机抽取Session
-         */
+         * */
         randomExtractSession(sc, taskId, filteredSessionId2AggregationInfoRDD, sessionId2DetailRDD);
 
         /*
@@ -149,7 +149,7 @@ public class UserVisitSessionAnalyzeSpark {
            5.使用sortByKey进行二次排序
            6.获取排序后的前10个品类:take(10)
            7.将top10热门品类即每个品类的点击下单支付次数写入数据库
-         */
+         * */
         List<Tuple2<CategorySortKey, String>> top10CategoryList = getTop10Category(taskId, sessionId2DetailRDD);
 
         /*
@@ -158,7 +158,7 @@ public class UserVisitSessionAnalyzeSpark {
          * 2.按照Session粒度的数据进行聚合,获取到Session对应的每个品类的点击次数
          * 3.按照品类id,分组取top10,并且获取到top10活跃Session
          * 4.结果的存储
-         */
+         * */
         getTop10Session(sc, taskId, top10CategoryList, sessionId2DetailRDD);
 
         sc.stop();
@@ -351,7 +351,7 @@ public class UserVisitSessionAnalyzeSpark {
          * 在第二步中分别计算了点击下单支付次数,可能不是包含所有品类的
          * 比如:有点品类只是点击过,但没有下单,类似的这种情况很多
          * 所以在这里如果要做join,就不能用join,需要用lefOuterJoin
-         */
+         * */
         JavaPairRDD<Long, String> categoryId2CountRDD = joinCategoryAndDetail(categoryIdRDD, clickCategoryId2CountRDD, orderCategoryId2CountRDD, payCategoryId2CountRDD);
         /* 第四步:实现自定义排序 */
 
@@ -572,7 +572,7 @@ public class UserVisitSessionAnalyzeSpark {
          * 需要得到每天每小时的Session数量,然后计算出每天每小时Session抽取索引,遍历每天每小时的Session
          * 首先抽取出Session聚合数据,写入数据库表
          * time2SessionIdRDD的数据,是每天的某个小时的Session聚合数据
-         */
+         * */
         // 计算每天每小时的Session数量
         Map<String, Object> countMap = time2SessionIdRDD.countByKey();
         /* 第二步:使用时间比例随机抽取算法,计算出每天每小时抽取的Session索引 */
@@ -679,7 +679,7 @@ public class UserVisitSessionAnalyzeSpark {
          * 将该Session写入到数据库
          * 然后将抽取出来的Session返回,生成新的JavaRDD<String>
          * 用抽取出来的SessionId,去join他们的访问明细,在写入数据库表
-         */
+         * */
         JavaPairRDD<String, String> extractSessionIdsRDD = time2SessionRDD.flatMapToPair(new PairFlatMapFunction<Tuple2<String, Iterable<String>>, String, String>() {
             @Override
             public Iterable<Tuple2<String, String>> call(Tuple2<String, Iterable<String>> stringIterableTuple2) throws Exception {
@@ -879,7 +879,7 @@ public class UserVisitSessionAnalyzeSpark {
                 /*
                  * 代码执行到这里,说明该Session通过了用户指定的筛选条件
                  * 接下来要多Session的访问时长和访问步长进行统计
-                 */
+                 * */
                 // 根据Session对应的时长和步长的时间范围进行累加操作
                 sessionAggrStatAccumulator.add(Constants.SESSION_COUNT);
                 // 计算出Session的访问时长和访问步长的范围,并进行累加

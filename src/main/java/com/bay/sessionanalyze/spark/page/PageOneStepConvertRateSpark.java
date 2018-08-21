@@ -115,7 +115,7 @@ public class PageOneStepConvertRateSpark {
          * 如果页面流为:1,3,5,6
          * 第一个页面切片:1_3
          * 第一个页面的转化率:3的PV/1的PV
-         */
+         * */
         // 通过for循环,获取目标页面流中的各个页面切片和访问量
         for (int i = 1; i < targetPages.length; i++) {
             // 获取页面切片
@@ -186,7 +186,7 @@ public class PageOneStepConvertRateSpark {
                  * 代码运行到这里,session的访问数据已经拿到了
                  * 在默认情况下并没有排序,
                  * 在实现转换率的时候需要把数据按照时间排序
-                 */
+                 * */
                 // 把访问行为数据放到list里,便于排序
                 List<Row> rows = new ArrayList<>();
                 while (iterator.hasNext()) {
@@ -219,7 +219,7 @@ public class PageOneStepConvertRateSpark {
                      * 上次访问的页面id:lastPageId=1
                      * 这次请求的页面是:3
                      * 那么生成的页面切片为:1_3
-                     */
+                     * */
                     String pageSplit = lastPageId + "_" + pageId;
                     // 对这个页面切片判断一下,是否在使用者指定的页面流中
                     for (int i = 1; i < targetPages.length; i++) {
@@ -227,7 +227,7 @@ public class PageOneStepConvertRateSpark {
                          * 比如说:使用者指定的页面流是:1,2,5,6
                          * 遍历的时候,从索引1开始,也就是从第二个页面开始
                          * 这样第一个页面切片就是1_2
-                         */
+                         * */
                         String targetPageSplit = targetPages[i - 1] + "_" + targetPages[i];
                         if (pageSplit.equals(targetPageSplit)) {
                             list.add(new Tuple2<>(pageSplit, 1));
