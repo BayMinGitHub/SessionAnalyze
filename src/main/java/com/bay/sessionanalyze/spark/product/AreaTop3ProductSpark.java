@@ -149,11 +149,7 @@ public class AreaTop3ProductSpark {
          * area,product_id,click_count,cities_info,product_name,product_status
          * */
         String sql = "select " +
-                "tap_cc.area," +
-                "tap_cc.click_count," +
-                "tap_cc.cities_info," +
-                "pi.product_id," +
-                "pi.product_name," +
+                "tap_cc.area,tap_cc.click_count,tap_cc.cities_info,pi.product_id,pi.product_name," +
                 "if(get_json_object(pi.extend_info,'product_status')='0','self','third party') as product_status " +
                 "from tmp_area_product_click_count as tap_cc join product_info as pi on tap_cc.product_id=pi.product_id";
         DataFrame df = sqlContext.sql(sql);
@@ -172,8 +168,7 @@ public class AreaTop3ProductSpark {
          * */
         // 拼接字符串
         String sql = "select " +
-                "area," +
-                "product_id," +
+                "area,product_id," +
                 "count(*) as click_count," +
                 "group_concat_distinct(concat_long_String(city_id,city_name,':')) as cities_info " +
                 "from tmp_click_product_basic group by area,product_id";
