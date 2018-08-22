@@ -234,7 +234,7 @@ public class AdClickRealTimeStatSpark {
                             adProvinceTop3s.add(adProvinceTop3);
                         }
                         IAdProvinceTop3DAO adProvinceTop3DAO = DAOFactory.getAdProvinceTop3DAO();
-                        adProvinceTop3DAO.truncate();
+                        // adProvinceTop3DAO.truncate();
                         adProvinceTop3DAO.updateBatch(adProvinceTop3s);
                     }
                 });
